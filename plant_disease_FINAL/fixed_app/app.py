@@ -17,46 +17,39 @@ supplement_path = os.path.join(BASE_DIR, "supplement_info.csv")
 model_path      = os.path.join(BASE_DIR, "plant_disease_model_1_latest.pt")
 
 # -------------------- LOAD CSV --------------------
-disease_info    = pd.read_csv(disease_path,    encoding='cp1252')
+disease_info    = pd.read_csv(disease_path, encoding='cp1252')
 supplement_info = pd.read_csv(supplement_path, encoding='cp1252')
 
-# -------------------- DOWNLOAD MODEL IF NOT EXISTS --------------------
-# ⚠️  Replace the Drive ID below AFTER you finish training in Colab
-GDRIVE_FILE_ID = "YOUR_NEW_RESNET18_MODEL_ID"
+# -------------------- GOOGLE DRIVE MODEL --------------------
+GDRIVE_FILE_ID = "13o3rNbawnA8ZSgUDdu7Y3LFGvXHEYG3F"
 
-model = None   # stays None until a real model file is present
-
+# -------------------- DOWNLOAD MODEL --------------------
 if not os.path.exists(model_path):
-    if GDRIVE_FILE_ID == "YOUR_NEW_RESNET18_MODEL_ID":
-        print("=" * 60)
-        print("  MODEL NOT FOUND — train first, then set GDRIVE_FILE_ID")
-        print("  App will start but predictions will be disabled.")
-        print("=" * 60)
-    else:
-        print("Downloading model from Google Drive ...")
-        url = f"https://drive.google.com/uc?export=download&id={GDRIVE_FILE_ID}"
-        gdown.download(url, model_path, quiet=False)
+    print("⬇️ Downloading model from Google Drive...")
+    url = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
+    gdown.download(url, model_path, quiet=False)
 
-# -------------------- LOAD RESNET18 MODEL --------------------
-if os.path.exists(model_path):
-    model = models.resnet18(weights=None)
-    model.fc = nn.Linear(model.fc.in_features, 39)
-    model.load_state_dict(torch.load(model_path, map_location="cpu"))
-    model.eval()
-    print("Model loaded successfully!")
+# -------------------- LOAD MODEL --------------------
+model = models.resnet18(weights=None)
+
+# ⚠️ IMPORTANT: 15 classes (your dataset)
+model.fc = nn.Linear(model.fc.in_features, 15)
+
+model.load_state_dict(torch.load(model_path, map_location="cpu"))
+model.eval()
+
+print("✅ Model loaded successfully!")
 
 # -------------------- PREDICTION FUNCTION --------------------
 def prediction(image_path):
-    if model is None:
-        return None                     # no model yet
-
-    image      = Image.open(image_path).convert("RGB")
-    image      = image.resize((224, 224))
+    image = Image.open(image_path).convert("RGB")
+    image = image.resize((224, 224))
     input_data = TF.to_tensor(image).unsqueeze(0)
 
     with torch.no_grad():
         output = model(input_data)
-        pred   = torch.argmax(output, dim=1).item()
+        pred = torch.argmax(output, dim=1).item()
+
     return pred
 
 # -------------------- FLASK APP --------------------
@@ -82,31 +75,20 @@ def mobile_device_detected_page():
 @app.route('/submit', methods=['GET', 'POST'])
 def submit():
     if request.method == 'POST':
-        # ---- model not ready yet ----
-        if model is None:
-            return """
-            <h2 style='font-family:sans-serif;color:#c0392b;padding:40px'>
-            ⚠️ Model not loaded yet.<br><br>
-            Please train the ResNet18 model first using
-            <code>train_resnet.py</code> in Google Colab,
-            upload the <code>.pt</code> file to Google Drive,
-            and paste the file ID into <code>GDRIVE_FILE_ID</code>
-            inside <code>app.py</code>.
-            </h2>
-            """, 503
+        image = request.files['image']
 
-        image       = request.files['image']
-        upload_dir  = os.path.join(BASE_DIR, "static", "uploads")
+        upload_dir = os.path.join(BASE_DIR, "static", "uploads")
         os.makedirs(upload_dir, exist_ok=True)
-        file_path   = os.path.join(upload_dir, image.filename)
+
+        file_path = os.path.join(upload_dir, image.filename)
         image.save(file_path)
 
         pred = prediction(file_path)
 
-        title      = disease_info['disease_name'][pred]
-        description= disease_info['description'][pred]
-        prevent    = disease_info['Possible Steps'][pred]
-        image_url  = disease_info['image_url'][pred]
+        title       = disease_info['disease_name'][pred]
+        description = disease_info['description'][pred]
+        prevent     = disease_info['Possible Steps'][pred]
+        image_url   = disease_info['image_url'][pred]
 
         supplement_name      = supplement_info['supplement name'][pred]
         supplement_image_url = supplement_info['supplement image'][pred]
@@ -114,23 +96,27 @@ def submit():
 
         return render_template(
             'submit.html',
-            title=title, desc=description, prevent=prevent,
-            image_url=image_url, pred=pred,
-            sname=supplement_name, simage=supplement_image_url,
+            title=title,
+            desc=description,
+            prevent=prevent,
+            image_url=image_url,
+            pred=pred,
+            sname=supplement_name,
+            simage=supplement_image_url,
             buy_link=supplement_buy_link
         )
 
-@app.route('/market', methods=['GET', 'POST'])
+@app.route('/market')
 def market():
     return render_template(
         'market.html',
         supplement_image=list(supplement_info['supplement image']),
-        supplement_name =list(supplement_info['supplement name']),
-        disease         =list(disease_info['disease_name']),
-        buy             =list(supplement_info['buy link'])
+        supplement_name=list(supplement_info['supplement name']),
+        disease=list(disease_info['disease_name']),
+        buy=list(supplement_info['buy link'])
     )
 
 # -------------------- RUN APP --------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(debug=True, host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port)
