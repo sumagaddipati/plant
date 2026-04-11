@@ -1,0 +1,45 @@
+=======================================================
+  HOW TO RUN — Plant Disease Detection App
+=======================================================
+
+PHASE 1: TRAIN THE MODEL (one time only, ~15 mins)
+---------------------------------------------------
+1. Open https://colab.research.google.com
+2. Create new notebook
+3. Upload train_resnet.py OR copy-paste its contents
+4. Change DATA_DIR to your PlantVillage dataset folder on Drive
+5. Runtime > Change Runtime Type > GPU (T4)
+6. Run All (takes ~15 minutes)
+7. Model saves to your Google Drive automatically
+
+
+PHASE 2: GET THE GOOGLE DRIVE LINK
+---------------------------------------------------
+1. Open Google Drive
+2. Find: plant_disease_model_1_latest.pt
+3. Right-click > Share > "Anyone with the link"
+4. Copy the URL — it looks like:
+     https://drive.google.com/file/d/1aBcDeFgHiJkLm.../view
+                                     ^^^^^^^^^^^^^^^^
+                                     THIS PART IS YOUR FILE ID
+5. Open app.py, find this line:
+     GDRIVE_FILE_ID = "YOUR_NEW_RESNET18_MODEL_ID"
+   Replace with your actual ID:
+     GDRIVE_FILE_ID = "1aBcDeFgHiJkLm..."
+
+
+PHASE 3: RUN LOCALLY
+---------------------------------------------------
+1. Open terminal / PowerShell in the fixed_app folder
+2. pip install -r requirements.txt
+3. python app.py
+4. Open browser: http://localhost:5000
+
+
+PHASE 4: DEPLOY TO RENDER (free)
+---------------------------------------------------
+1. Push fixed_app folder to your GitHub repo
+2. Go to https://render.com > your service > Manual Deploy
+3. Done! App will download model on first boot.
+
+=======================================================
