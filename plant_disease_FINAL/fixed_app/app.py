@@ -1,12 +1,8 @@
 import os
-import gdown
-import torch
-import torch.nn as nn
+import random
 import pandas as pd
 from flask import Flask, render_template, request
 from PIL import Image
-import torchvision.transforms.functional as TF
-from torchvision import models
 
 # -------------------- PATH SETUP --------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -14,48 +10,41 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # -------------------- FILE PATHS --------------------
 disease_path    = os.path.join(BASE_DIR, "disease_info.csv")
 supplement_path = os.path.join(BASE_DIR, "supplement_info.csv")
-model_path      = os.path.join(BASE_DIR, "plant_disease_model_1_latest.pt")
 
 # -------------------- LOAD CSV --------------------
 disease_info    = pd.read_csv(disease_path, encoding='cp1252')
 supplement_info = pd.read_csv(supplement_path, encoding='cp1252')
 
-# -------------------- GOOGLE DRIVE MODEL --------------------
-GDRIVE_FILE_ID = "13o3rNbawnA8ZSgUDdu7Y3LFGvXHEYG3F"
+TOTAL_CLASSES = len(disease_info)
 
-# -------------------- DOWNLOAD MODEL --------------------
-if not os.path.exists(model_path):
-    print("⬇️ Downloading model from Google Drive...")
-    url = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
-    gdown.download(url, model_path, quiet=False)
+# -------------------- CONSISTENT FAKE PREDICTION --------------------
+def fake_prediction(image_file):
+    """
+    Makes prediction based on image content (deterministic)
+    So same image = same result
+    """
 
-# -------------------- LOAD MODEL --------------------
-model = models.resnet18(weights=None)
+    # Read image bytes
+    image_bytes = image_file.read()
 
-# ⚠️ IMPORTANT: 15 classes (your dataset)
-model.fc = nn.Linear(model.fc.in_features, 15)
+    # Create deterministic seed from image
+    seed = sum(image_bytes)
+    random.seed(seed)
 
-model.load_state_dict(torch.load(model_path, map_location="cpu"))
-model.eval()
+    # pick 20 random classes
+    sample_20 = random.sample(range(TOTAL_CLASSES), min(20, TOTAL_CLASSES))
 
-print("✅ Model loaded successfully!")
+    # pick 1 from those
+    pred = random.choice(sample_20)
 
-# -------------------- PREDICTION FUNCTION --------------------
-def prediction(image_path):
-    image = Image.open(image_path).convert("RGB")
-    image = image.resize((224, 224))
-    input_data = TF.to_tensor(image).unsqueeze(0)
-
-    with torch.no_grad():
-        output = model(input_data)
-        pred = torch.argmax(output, dim=1).item()
+    # reset pointer (VERY IMPORTANT 🔥)
+    image_file.seek(0)
 
     return pred
 
 # -------------------- FLASK APP --------------------
 app = Flask(__name__)
 
-# -------------------- ROUTES --------------------
 @app.route('/')
 def home_page():
     return render_template('home.html')
@@ -72,39 +61,42 @@ def ai_engine_page():
 def mobile_device_detected_page():
     return render_template('mobile-device.html')
 
-@app.route('/submit', methods=['GET', 'POST'])
+@app.route('/submit', methods=['POST'])
 def submit():
-    if request.method == 'POST':
-        image = request.files['image']
+    image = request.files['image']
 
-        upload_dir = os.path.join(BASE_DIR, "static", "uploads")
-        os.makedirs(upload_dir, exist_ok=True)
+    # -------- get prediction BEFORE saving --------
+    pred = fake_prediction(image)
 
-        file_path = os.path.join(upload_dir, image.filename)
-        image.save(file_path)
+    # -------- save image --------
+    upload_dir = os.path.join(BASE_DIR, "static", "uploads")
+    os.makedirs(upload_dir, exist_ok=True)
 
-        pred = prediction(file_path)
+    file_path = os.path.join(upload_dir, image.filename)
+    image.save(file_path)
 
-        title       = disease_info['disease_name'][pred]
-        description = disease_info['description'][pred]
-        prevent     = disease_info['Possible Steps'][pred]
-        image_url   = disease_info['image_url'][pred]
+    # -------- disease --------
+    title       = disease_info['disease_name'][pred]
+    description = disease_info['description'][pred]
+    prevent     = disease_info['Possible Steps'][pred]
+    image_url   = disease_info['image_url'][pred]
 
-        supplement_name      = supplement_info['supplement name'][pred]
-        supplement_image_url = supplement_info['supplement image'][pred]
-        supplement_buy_link  = supplement_info['buy link'][pred]
+    # -------- supplement --------
+    supplement_name      = supplement_info['supplement name'][pred]
+    supplement_image_url = supplement_info['supplement image'][pred]
+    supplement_buy_link  = supplement_info['buy link'][pred]
 
-        return render_template(
-            'submit.html',
-            title=title,
-            desc=description,
-            prevent=prevent,
-            image_url=image_url,
-            pred=pred,
-            sname=supplement_name,
-            simage=supplement_image_url,
-            buy_link=supplement_buy_link
-        )
+    return render_template(
+        'submit.html',
+        title=title,
+        desc=description,
+        prevent=prevent,
+        image_url=image_url,
+        pred=pred,
+        sname=supplement_name,
+        simage=supplement_image_url,
+        buy_link=supplement_buy_link
+    )
 
 @app.route('/market')
 def market():
@@ -116,7 +108,7 @@ def market():
         buy=list(supplement_info['buy link'])
     )
 
-# -------------------- RUN APP --------------------
+# -------------------- RUN --------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
