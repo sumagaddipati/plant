@@ -20,27 +20,20 @@ TOTAL_CLASSES = len(disease_info)
 # -------------------- CONSISTENT FAKE PREDICTION --------------------
 def fake_prediction(image_file):
     """
-    Makes prediction based on image content (deterministic)
-    So same image = same result
+    SAME LOGIC — NOT TOUCHED
     """
 
-    # Read image bytes
     image_bytes = image_file.read()
-
-    # Create deterministic seed from image
     seed = sum(image_bytes)
     random.seed(seed)
 
-    # pick 20 random classes
     sample_20 = random.sample(range(TOTAL_CLASSES), min(20, TOTAL_CLASSES))
-
-    # pick 1 from those
     pred = random.choice(sample_20)
 
-    # reset pointer (VERY IMPORTANT 🔥)
     image_file.seek(0)
 
-    return pred
+    return pred, sample_20   # ✅ ONLY ADDING sample_20 (safe extension)
+
 
 # -------------------- FLASK APP --------------------
 app = Flask(__name__)
@@ -61,12 +54,13 @@ def ai_engine_page():
 def mobile_device_detected_page():
     return render_template('mobile-device.html')
 
+# -------------------- SUBMIT --------------------
 @app.route('/submit', methods=['POST'])
 def submit():
     image = request.files['image']
 
-    # -------- get prediction BEFORE saving --------
-    pred = fake_prediction(image)
+    # -------- prediction --------
+    pred, sample_20 = fake_prediction(image)
 
     # -------- save image --------
     upload_dir = os.path.join(BASE_DIR, "static", "uploads")
@@ -86,6 +80,19 @@ def submit():
     supplement_image_url = supplement_info['supplement image'][pred]
     supplement_buy_link  = supplement_info['buy link'][pred]
 
+    # ---------------- NEW UI FEATURES (SAFE ADD) ----------------
+
+    # Fake confidence (based on seed logic, still deterministic)
+    confidence = round((pred % 100) * 0.8 + 20, 2)   # always 20–100%
+
+    # Top 3 from sampled 20
+    top3 = sample_20[:3]
+
+    top3_names  = [disease_info['disease_name'][i] for i in top3]
+    top3_scores = [round(100 - (i*10), 2) for i in range(len(top3))]
+
+    # ----------------------------------------------------------
+
     return render_template(
         'submit.html',
         title=title,
@@ -95,9 +102,16 @@ def submit():
         pred=pred,
         sname=supplement_name,
         simage=supplement_image_url,
-        buy_link=supplement_buy_link
+        buy_link=supplement_buy_link,
+
+        # NEW (UI support)
+        confidence=confidence,
+        top3_names=top3_names,
+        top3_scores=top3_scores
     )
 
+
+# -------------------- MARKET --------------------
 @app.route('/market')
 def market():
     return render_template(

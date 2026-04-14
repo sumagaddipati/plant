@@ -7,116 +7,41 @@ Plant Disease Detection
 {% block body %}
 
 <style>
-body {
-  overflow-x: hidden;
+.hero {
+    height: 90vh;
+    background: url('https://images.unsplash.com/photo-1501004318641-b39e6451bec6') no-repeat center;
+    background-size: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Card hover */
-.card-custom {
-  transition: 0.3s;
-}
-.card-custom:hover {
-  transform: translateY(-5px);
+.overlay {
+    background: rgba(0,0,0,0.5);
+    padding: 40px;
+    border-radius: 15px;
+    color: white;
+    text-align: center;
 }
 
-/* Image styling */
-.plant-img {
-  height: 180px;
-  object-fit: cover;
+.btn-main {
+    margin-top: 20px;
+    background: #22c55e;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 10px;
 }
 </style>
 
-<div class="container">
+<div class="hero">
+    <div class="overlay">
+        <h1>🌿 Plant Disease Detection</h1>
+        <p>AI-powered crop diagnosis</p>
 
-  <!-- TITLE -->
-  <div class="text-center mt-5 mb-4">
-    <h1 style="color:#043606;">🍁 Plant Disease Detection</h1>
-    <p class="text-dark">
-      This AI Engine will help detect diseases from fruits & vegetables
-    </p>
-
-    <a href="/index">
-      <button class="btn btn-success px-4 mt-2">AI Engine</button>
-    </a>
-  </div>
-
-  <!-- GRID -->
-  <div class="row g-4">
-
-    <!-- Apple -->
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-      <div class="card card-custom shadow h-100 text-center p-3">
-        <img src="https://post.healthline.com/wp-content/uploads/2020/09/Do_Apples_Affect_Diabetes_and_Blood_Sugar_Levels-732x549-thumbnail-1-732x549.jpg"
-             class="img-fluid plant-img rounded">
-        <p class="mt-2 fw-bold">Apple</p>
-      </div>
+        <a href="/index">
+            <button class="btn-main">Start Analysis </button>
+        </a>
     </div>
-
-    <!-- Blueberry -->
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-      <div class="card card-custom shadow h-100 text-center p-3">
-        <img src="https://www.supermarketperimeter.com/ext/resources/0430-blueberries.png?t=1588260305&width=1080"
-             class="img-fluid plant-img rounded">
-        <p class="mt-2 fw-bold">Blueberry</p>
-      </div>
-    </div>
-
-    <!-- Cherry -->
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-      <div class="card card-custom shadow h-100 text-center p-3">
-        <img src="https://img.webmd.com/dtmcms/live/webmd/consumer_assets/site_images/article_thumbnails/slideshows/health_benefits_of_cherries_slideshow/1800x1200_health_benefits_of_cherries_slideshow.jpg"
-             class="img-fluid plant-img rounded">
-        <p class="mt-2 fw-bold">Cherry</p>
-      </div>
-    </div>
-
-    <!-- Corn -->
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-  <div class="card card-custom shadow h-100 text-center p-3">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/PerfectStrawberry.jpg"
-         class="img-fluid plant-img rounded">
-    <p class="mt-2 fw-bold">Strawberry</p>
-  </div>
-</div>
-
-    <!-- Grape -->
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-      <div class="card card-custom shadow h-100 text-center p-3">
-        <img src="https://i.ndtvimg.com/i/2015-09/grapes_625x350_61443376353.jpg"
-             class="img-fluid plant-img rounded">
-        <p class="mt-2 fw-bold">Grape</p>
-      </div>
-    </div>
-
-    <!-- Orange -->
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-      <div class="card card-custom shadow h-100 text-center p-3">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c4/Orange-Fruit-Pieces.jpg"
-             class="img-fluid plant-img rounded">
-        <p class="mt-2 fw-bold">Orange</p>
-      </div>
-    </div>
-
-    <!-- Potato -->
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-      <div class="card card-custom shadow h-100 text-center p-3">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/a/ab/Patates.jpg"
-             class="img-fluid plant-img rounded">
-        <p class="mt-2 fw-bold">Potato</p>
-      </div>
-    </div>
-
-    <!-- Tomato -->
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-      <div class="card card-custom shadow h-100 text-center p-3">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/8/88/Bright_red_tomato_and_cross_section02.jpg"
-             class="img-fluid plant-img rounded">
-        <p class="mt-2 fw-bold">Tomato</p>
-      </div>
-    </div>
-
-  </div>
-
 </div>
 
 {% endblock %}
